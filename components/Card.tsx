@@ -1,7 +1,6 @@
 
 import React from 'react';
-import { CardData, SeriesType } from '../types';
-import { SERIES_CONFIGS } from '../constants';
+import { CardData } from '../types';
 
 interface CardProps {
   card: CardData;
@@ -9,37 +8,30 @@ interface CardProps {
   isFlipped: boolean;
 }
 
-// 定義一組亮麗可愛的馬卡龍色系
-const CUTE_COLORS = [
-  '#FFADAD', // 柔粉紅
-  '#FFD6A5', // 粉橘
-  '#FDFFB6', // 嫩黃
-  '#CAFFBF', // 嫩綠
-  '#9BF6FF', // 天藍
-  '#A0C4FF', // 淺藍
-  '#BDB2FF', // 薰衣草紫
-  '#FFC6FF', // 亮粉
-  '#FFCFD2', // 蜜桃
+const GEM_COLORS = [
+  '#6366F1', // Indigo
+  '#10B981', // Emerald
+  '#F59E0B', // Amber
+  '#EC4899', // Pink
+  '#8B5CF6', // Violet
+  '#06B6D4', // Cyan
+  '#EF4444', // Red
+  '#F97316', // Orange
+  '#14B8A6', // Teal
 ];
 
+// 更新：更換為新的神奇寶貝 Sprite 素材 (10欄 x 3列)
+const SPRITE_URL = 'https://chihchao.github.io/gacha_cards/docs/pokemon.jpg';
+
 const Card: React.FC<CardProps> = ({ card, onFlip, isFlipped }) => {
-  const config = SERIES_CONFIGS[card.series];
+  const baseColor = GEM_COLORS[card.id % GEM_COLORS.length];
   
-  // 使用 constants 中定義的圖案網址
-  const frontImage = config.imageUrl;
+  // 使用卡片數據中已存儲的隨機索引
+  const spriteIndex = card.spriteIndex;
 
-  // 根據 ID 分配背景色，確保每次洗牌後視覺豐富
-  const bgColor = CUTE_COLORS[card.id % CUTE_COLORS.length];
-
-  // 計算 3x3 網格的位置 (共 9 格)
-  // 索引 0-8
-  const gridIndex = card.id % 9;
-  const col = gridIndex % 3;
-  const row = Math.floor(gridIndex / 3);
-  
-  // 背景位置百分比：0%, 50%, 100% 分別對應 3 格的起始點
-  const posX = col * 50; 
-  const posY = row * 50;
+  // 計算背景定位百分比 (10欄：0%-100%，3列：0%-100%)
+  const posX = (spriteIndex % 10) * (100 / 9);
+  const posY = Math.floor(spriteIndex / 10) * (100 / 2);
 
   return (
     <div 
@@ -47,42 +39,48 @@ const Card: React.FC<CardProps> = ({ card, onFlip, isFlipped }) => {
       onClick={() => onFlip(card.id)}
     >
       <div 
-        className={`relative w-full h-full duration-500 transition-transform preserve-3d ${
+        className={`relative w-full h-full duration-700 transition-transform preserve-3d ${
           isFlipped ? 'rotate-y-180' : ''
         }`}
       >
-        {/* 正面 (未翻牌) - 隨機馬卡龍背景色 */}
+        {/* 正面 (未翻牌) */}
         <div 
-          className="absolute inset-0 backface-hidden rounded-lg shadow-md border-2 border-white/50 overflow-hidden p-1.5 transition-colors duration-300"
-          style={{ backgroundColor: bgColor }}
+          className="absolute inset-0 backface-hidden rounded-2xl shadow-lg border-4 border-white/80 overflow-hidden p-2 transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-1"
+          style={{ backgroundColor: baseColor }}
         >
-            {/* 使用 background-image 實現 3x3 網格切割 */}
-            <div 
-                className="w-full h-full rounded-md overflow-hidden bg-white/20 shadow-inner"
-                style={{
-                    backgroundImage: `url(${frontImage})`,
-                    backgroundSize: '300% 300%',
+            <div className="w-full h-full rounded-xl bg-black/5 backdrop-blur-[1px] flex items-center justify-center p-1 relative overflow-hidden ring-1 ring-white/20">
+                <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent"></div>
+                
+                <div 
+                  className="w-full h-full bg-no-repeat relative z-10 drop-shadow-[0_4px_8px_rgba(0,0,0,0.2)] transform group-hover:scale-105 transition-transform duration-500 ease-out" 
+                  style={{
+                    backgroundImage: `url(${SPRITE_URL})`,
+                    backgroundSize: '1000% 300%', 
                     backgroundPosition: `${posX}% ${posY}%`,
-                    backgroundRepeat: 'no-repeat'
-                }}
-            >
+                  }}
+                />
             </div>
-            {/* 懸停光澤與放大效果 */}
-            <div className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-colors"></div>
+            
+            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
         </div>
 
-        {/* 背面 (已翻牌) - 白色背景，深色文字 */}
-        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white rounded-lg shadow-xl flex flex-col items-center justify-center p-2 border-2 border-indigo-600 overflow-hidden">
-           <div className="relative z-10 flex flex-col items-center w-full px-1">
-             <div className="bg-indigo-50/80 px-3 py-4 rounded-2xl border border-indigo-100 backdrop-blur-sm w-full transform translate-z-10 shadow-sm">
-               <div className="text-center font-black text-xl sm:text-2xl md:text-3xl text-indigo-900 leading-tight break-words">
+        {/* 背面 (已翻牌) */}
+        <div className="absolute inset-0 backface-hidden rotate-y-180 bg-white rounded-2xl shadow-2xl flex flex-col items-center justify-center p-3 border-4 border-indigo-600 overflow-hidden">
+           <div className="w-full h-full bg-indigo-50/50 rounded-xl flex flex-col items-center justify-center border-2 border-indigo-100 p-2 relative">
+               <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+                 <div className="w-24 h-24 rounded-full border-[10px] border-indigo-900"></div>
+               </div>
+               
+               <div className="text-center font-black text-xl sm:text-2xl text-indigo-950 leading-tight break-words drop-shadow-sm z-10">
                  {card.prize.name}
                </div>
-             </div>
+               <div className="mt-3 w-10 h-1.5 bg-indigo-200 rounded-full"></div>
            </div>
            
-           {/* 底部裝飾條 (依據系列顏色區分) */}
-           <div className={`absolute bottom-0 inset-x-0 h-1.5 ${config.color}`}></div>
+           <div className="absolute top-3 left-3 w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+           <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+           <div className="absolute bottom-3 left-3 w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
+           <div className="absolute bottom-3 right-3 w-1.5 h-1.5 bg-indigo-400 rounded-full"></div>
         </div>
       </div>
     </div>
