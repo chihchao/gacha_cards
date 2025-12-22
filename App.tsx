@@ -9,21 +9,19 @@ import StudentCard from './components/StudentCard';
 import SeatSelector from './components/SeatSelector';
 import StudentDetailModal from './components/StudentDetailModal';
 import ResultModal from './components/ResultModal';
-import { LayoutDashboard, Ticket, RotateCcw, FileSpreadsheet, RefreshCw, AlertCircle, Settings, Save, X, HardDrive, UserPlus, SlidersHorizontal, Database } from 'lucide-react';
+import { LayoutDashboard, Ticket, FileSpreadsheet, RefreshCw, AlertCircle, Settings, Save, X, HardDrive, UserPlus, SlidersHorizontal, Database } from 'lucide-react';
 
 const App: React.FC = () => {
   const [view, setView] = useState<'dashboard' | 'gacha'>('dashboard');
   const [students, setStudents] = useState<Student[]>([]);
-  
   const [activeStudentId, setActiveStudentId] = useState<string | number | null>(null);
-  
   const [syncStatus, setSyncStatus] = useState<'loading' | 'synced' | 'error' | 'local'>('loading');
   const [gasUrl, setGasUrl] = useState<string>(localStorage.getItem('gas_url') || '');
-  
   const [showSyncSettings, setShowSyncSettings] = useState(false);
   const [showGachaSettings, setShowGachaSettings] = useState(false);
-  
   const [tempUrl, setTempUrl] = useState(gasUrl);
+  
+  const [gachaId, setGachaId] = useState<number>(0);
   
   const [rewardCounts, setRewardCounts] = useState<Record<string, number>>(() => {
     const saved = localStorage.getItem('gacha_reward_counts');
@@ -97,26 +95,33 @@ const App: React.FC = () => {
     loadData();
   }, [loadData]);
 
+  const shuffle = <T,>(array: T[]): T[] => {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  };
+
   const initGacha = useCallback(() => {
     if (rewardTypes.length === 0) {
       setCards([]);
       return;
     }
 
-    const pool: Prize[] = [];
+    let pool: Prize[] = [];
     rewardTypes.forEach((type, index) => {
-      const count = rewardCounts[type] ?? 2;
+      const count = rewardCounts[type] ?? 0;
       for (let i = 0; i < count; i++) {
         pool.push({ id: `prize-${type}-${index}-${i}`, name: type, category: 'dynamic' });
       }
     });
 
-    const shuffledPool = [...pool].sort(() => Math.random() - 0.5);
+    const shuffledPool = shuffle(pool);
     const seriesList = [SeriesType.POKEMON, SeriesType.CHIIKAWA, SeriesType.SANRIO, SeriesType.CAPYBARA];
-    const finalPool = shuffledPool.slice(0, 30);
     
-    // 每次初始化都隨機分配圖案索引 (0-29)
-    const newCards: CardData[] = finalPool.map((prize, index) => ({
+    const newCards: CardData[] = shuffledPool.map((prize, index) => ({
       id: index,
       prize,
       series: seriesList[index % seriesList.length],
@@ -126,6 +131,9 @@ const App: React.FC = () => {
 
     setCards(newCards);
     setFlippedIds(new Set());
+    setSelectedSeat(null);
+    setCurrentResult(null);
+    setGachaId(prev => prev + 1);
   }, [rewardTypes, rewardCounts]);
 
   useEffect(() => {
@@ -182,10 +190,27 @@ const App: React.FC = () => {
   };
 
   const updateRewardCountSetting = (type: string, val: string) => {
-    const num = parseInt(val) || 0;
+    const num = Math.max(0, parseInt(val) || 0);
     const next = { ...rewardCounts, [type]: num };
     setRewardCounts(next);
   };
+
+  const totalPoolSize = useMemo(() => 
+    Object.values(rewardCounts).reduce((a, b) => a + b, 0), 
+    [rewardCounts]
+  );
+
+  // 根據卡片總數計算最佳的行列數
+  const gridLayout = useMemo(() => {
+    const n = cards.length;
+    if (n === 0) return { cols: 6, rows: 5 };
+    
+    // 試圖讓行列比例接近螢幕比例（通常是寬螢幕）
+    // 我們讓列數多於行數，且兩者相乘大於等於 n
+    const cols = Math.ceil(Math.sqrt(n * 1.5)); // 稍微向寬度傾斜
+    const rows = Math.ceil(n / cols);
+    return { cols, rows };
+  }, [cards.length]);
 
   return (
     <div className="h-screen flex flex-col bg-[#F7F9FC] select-none overflow-hidden font-sans">
@@ -215,16 +240,6 @@ const App: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {view === 'gacha' && (
-            <button 
-              onClick={() => { if(confirm('確定要重置卡池嗎？')) initGacha(); }}
-              className="p-2.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all"
-              title="重置卡池"
-            >
-              <RotateCcw size={20} />
-            </button>
-          )}
-          
           <button 
             disabled={students.length === 0}
             onClick={() => { setView(view === 'dashboard' ? 'gacha' : 'dashboard'); setSelectedSeat(null); }}
@@ -236,24 +251,20 @@ const App: React.FC = () => {
           >
             {view === 'dashboard' ? <><Ticket size={18} /> 抽卡樂園</> : <><LayoutDashboard size={18} /> 學生列表</>}
           </button>
-
           <div className="w-[1px] h-6 bg-gray-200 mx-1"></div>
-
           <button onClick={() => setShowGachaSettings(true)} className="p-2.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all" title="卡池設定">
             <SlidersHorizontal size={20} />
           </button>
-          
           <button onClick={() => setShowSyncSettings(true)} className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="同步設定">
             <Database size={20} />
           </button>
-
           <button onClick={() => loadData()} className="p-2.5 text-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="重新整理">
             <RefreshCw size={20} className={syncStatus === 'loading' ? 'animate-spin' : ''} />
           </button>
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-6 z-10 custom-scrollbar">
+      <main className="flex-1 min-h-0 overflow-hidden p-4 z-10 flex flex-col">
         {syncStatus === 'loading' && students.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-indigo-300">
             <div className="w-12 h-12 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
@@ -278,7 +289,7 @@ const App: React.FC = () => {
             </div>
           </div>
         ) : view === 'dashboard' ? (
-          <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-8 xl:grid-cols-10 gap-4 max-w-[1600px] mx-auto pb-8">
+          <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-8 xl:grid-cols-10 gap-4 max-w-[1600px] mx-auto pb-8 overflow-y-auto custom-scrollbar flex-1 no-scrollbar">
             {students.map(student => (
               <StudentCard 
                 key={student.id} 
@@ -289,13 +300,39 @@ const App: React.FC = () => {
             ))}
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-between gap-4">
-            <div className="grid grid-cols-6 grid-rows-5 gap-3 w-full max-w-6xl flex-1 max-h-[72vh]">
-              {cards.map(card => (
-                <Card key={card.id} card={card} isFlipped={flippedIds.has(card.id)} onFlip={handleFlipCard} />
-              ))}
+          <div className="flex-1 min-h-0 flex flex-col items-center gap-4 overflow-hidden">
+            {cards.length > 0 ? (
+              <div 
+                className="flex-1 w-full max-w-7xl grid gap-2 md:gap-4 p-2 min-h-0"
+                style={{ 
+                  gridTemplateColumns: `repeat(${gridLayout.cols}, 1fr)`,
+                  gridTemplateRows: `repeat(${gridLayout.rows}, 1fr)`,
+                }}
+              >
+                {cards.map(card => (
+                  <div 
+                    key={`${card.id}-${gachaId}`} 
+                    className="w-full h-full flex items-center justify-center overflow-hidden"
+                  >
+                    <div className="w-full h-full max-w-full max-h-full aspect-[4/3] flex items-center justify-center">
+                      <Card 
+                        card={card} 
+                        isFlipped={flippedIds.has(card.id)} 
+                        onFlip={handleFlipCard} 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center text-gray-400">
+                 <Ticket size={48} className="mb-4 opacity-20" />
+                 <p className="font-bold">目前卡池為空，請點擊右上角設定卡池數量</p>
+              </div>
+            )}
+            <div className="w-full shrink-0">
+               <SeatSelector selectedSeat={selectedSeat} onSelect={setSelectedSeat} shake={shakeSelector} students={students} />
             </div>
-            <SeatSelector selectedSeat={selectedSeat} onSelect={setSelectedSeat} shake={shakeSelector} students={students} />
           </div>
         )}
       </main>
@@ -347,7 +384,7 @@ const App: React.FC = () => {
             </div>
             <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
               <div className="bg-rose-50 p-4 rounded-2xl border-2 border-rose-100 text-xs font-bold text-rose-600 leading-relaxed">
-                提示：卡池上限為 30 張卡片。請設定各獎勵卡在卡池中出現的數量。
+                提示：請設定各獎勵卡在卡池中出現的數量。卡池總張數將自動調整。
               </div>
               <div className="grid grid-cols-2 gap-4">
                 {rewardTypes.map(type => (
@@ -357,7 +394,6 @@ const App: React.FC = () => {
                        <input 
                         type="number" 
                         min="0"
-                        max="30"
                         value={rewardCounts[type] || 0}
                         onChange={(e) => updateRewardCountSetting(type, e.target.value)}
                         className="w-16 bg-rose-50 border-none rounded-lg px-2 py-1 text-center font-bold text-rose-600 focus:ring-2 focus:ring-rose-400 outline-none"
@@ -368,16 +404,16 @@ const App: React.FC = () => {
                 ))}
               </div>
               <div className="flex justify-between items-center px-2 py-4 border-t border-gray-100">
-                <span className="text-xs font-black text-gray-400 uppercase">目前卡池總計</span>
-                <span className={`text-xl font-black ${Object.values(rewardCounts).reduce((a,b)=>a+b, 0) > 30 ? 'text-red-500' : 'text-rose-600'}`}>
-                  {Object.values(rewardCounts).reduce((a,b)=>a+b, 0)} / 30
+                <span className="text-xs font-black text-gray-400 uppercase">當前卡池總計</span>
+                <span className="text-xl font-black text-rose-600">
+                  {totalPoolSize} 張卡片
                 </span>
               </div>
               <button 
                 onClick={() => { 
                   localStorage.setItem('gacha_reward_counts', JSON.stringify(rewardCounts));
                   setShowGachaSettings(false); 
-                  initGacha(); // 儲存後立即重新初始化卡池內容
+                  initGacha(); 
                 }} 
                 className="w-full bg-rose-500 hover:bg-rose-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-rose-100 active:scale-95"
               >
