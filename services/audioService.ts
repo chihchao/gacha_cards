@@ -4,6 +4,7 @@ class AudioService {
 
   private init() {
     if (!this.ctx) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       this.ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
   }
@@ -19,7 +20,7 @@ class AudioService {
 
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, startTime);
-      
+
       gain.gain.setValueAtTime(0, startTime);
       gain.gain.linearRampToValueAtTime(0.1, startTime + 0.05);
       gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);

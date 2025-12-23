@@ -20,7 +20,7 @@ const formatAvatarUrl = (url: string, id: string | number): string => {
     return `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${(numericId % 151) + 1}.png`;
   }
 
-  let formatted = url.trim();
+  const formatted = url.trim();
   if (formatted.includes('drive.google.com')) {
     const driveIdMatch = formatted.match(/\/d\/(.+?)\/(view|edit)?/);
     if (driveIdMatch && driveIdMatch[1]) {
@@ -41,12 +41,12 @@ export const sheetsService = {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Network response was not ok');
       const rawData = await response.json();
-      
+
       if (!rawData || rawData.length === 0) return [];
 
       const firstItem = rawData[0];
       const allOriginalHeaders = Object.keys(firstItem);
-      
+
       const headerMap: Record<string, string> = {};
       const inventoryHeaders: string[] = [];
 
@@ -62,17 +62,18 @@ export const sheetsService = {
       localStorage.setItem(STORAGE_MAP_KEY, JSON.stringify(headerMap));
       localStorage.setItem(STORAGE_INV_KEY, JSON.stringify(inventoryHeaders));
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return rawData.map((item: any) => {
         const rawId = item[headerMap['id']];
         const seat = String(item[headerMap['seat']] || '');
         const name = String(item[headerMap['name']] || '');
-        
+
         // 修正：生成穩定 ID。優先數值 -> 優先原始字串 -> 備選座號 -> 備選姓名
         let finalId: string | number;
         if (rawId !== undefined && rawId !== null && rawId !== '') {
-            finalId = isNaN(Number(rawId)) ? String(rawId) : Number(rawId);
+          finalId = isNaN(Number(rawId)) ? String(rawId) : Number(rawId);
         } else {
-            finalId = seat || name || `temp-${Math.random()}`;
+          finalId = seat || name || `temp-${Math.random()}`;
         }
 
         const inventory: Record<string, number> = {};
@@ -100,8 +101,9 @@ export const sheetsService = {
       const headerMapStr = localStorage.getItem(STORAGE_MAP_KEY);
       if (!headerMapStr) return false;
       const headerMap = JSON.parse(headerMapStr);
-      
+
       const payload = students.map(s => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const row: any = {};
         row[headerMap['id']] = s.id;
         row[headerMap['seat']] = s.seat;

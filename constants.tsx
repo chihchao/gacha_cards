@@ -1,5 +1,5 @@
 
-import { SeriesType, Prize, SeriesConfig, RewardType, RewardCard, Student } from './types';
+import { SeriesType, SeriesConfig, RewardCard, Student } from './types';
 
 // 預設的視覺樣式查找表
 export const REWARD_STYLES: Record<string, Partial<RewardCard>> = {

@@ -14,7 +14,7 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) => {
   const heldRewardKeys = Object.keys(student.inventory).filter(key => student.inventory[key] > 0);
 
   return (
-    <div 
+    <div
       onClick={onClick}
       className="relative bg-white rounded-xl shadow-sm border-2 border-indigo-100 p-2 transition-all cursor-pointer hover:shadow-md hover:border-indigo-300 active:scale-95 flex flex-col items-center min-h-[140px]"
     >
@@ -24,25 +24,30 @@ const StudentCard: React.FC<StudentCardProps> = ({ student, onClick }) => {
           <img src={student.avatar} alt={student.name} className="w-full h-full object-contain p-1" />
         </div>
         <span className="text-sm font-black text-gray-700 truncate w-full text-center px-1 mb-2">{student.name}</span>
-        
-        <div className="flex flex-wrap justify-center gap-1 w-full min-h-[32px]">
+
+        <div className="flex flex-col gap-1 w-full mt-1">
           {heldRewardKeys.length > 0 ? (
             heldRewardKeys.map(key => {
               const def = getRewardDefinition(key);
               const count = student.inventory[key];
               return (
-                <div 
-                  key={key} 
-                  className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full shadow-sm border border-white/50 ${def.bgClass}`}
+                <div
+                  key={key}
+                  className={`flex items-center justify-between px-2 py-1 rounded bg-slate-50 border border-slate-100 w-full`}
                 >
-                  <span className="text-[10px] leading-tight">{def.icon.split(' ')[0]}</span>
-                  <span className="text-[10px] font-bold">{count}</span>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <span className="text-[10px] shrink-0">{def.icon.split(' ')[0]}</span>
+                    <span className="text-[10px] font-bold text-gray-600 truncate">{def.name}</span>
+                  </div>
+                  <span className={`text-[10px] font-black px-1.5 rounded-full ${def.bgClass.replace('bg-', 'bg-opacity-20 ')}`}>
+                    x{count}
+                  </span>
                 </div>
               );
             })
           ) : (
-            <div className="h-full flex items-center justify-center">
-              <span className="text-[9px] text-gray-300 font-medium">尚無獎勵</span>
+            <div className="w-full py-2 text-center bg-gray-50 rounded border border-dashed border-gray-200">
+              <span className="text-[10px] text-gray-400">尚無獎勵</span>
             </div>
           )}
         </div>
