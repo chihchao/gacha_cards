@@ -20,19 +20,13 @@ const GEM_COLORS = [
   '#14B8A6', // Teal
 ];
 
-// 卡面素材網址 (10欄 x 3列)
-const SPRITE_URL = 'https://chihchao.github.io/gacha_cards/docs/pokemon.jpg';
-
 const Card: React.FC<CardProps> = ({ card, onFlip, isFlipped }) => {
   // 根據 ID 分配基礎背景色，確保視覺多樣性
   const baseColor = GEM_COLORS[card.id % GEM_COLORS.length];
   
-  // 使用初始化時隨機分配的圖案索引
-  const spriteIndex = card.spriteIndex;
-
-  // 計算背景定位百分比 (10欄：0%, 11.11%... 100%；3列：0%, 50%, 100%)
-  const posX = (spriteIndex % 10) * (100 / 9);
-  const posY = Math.floor(spriteIndex / 10) * (100 / 2);
+  // 將 spriteIndex (1-30) 格式化為二位數 (如 01, 02...)
+  const paddedIndex = String(card.spriteIndex).padStart(2, '0');
+  const imageUrl = `https://chihchao.github.io/html/gacha_cards/${paddedIndex}.png`;
 
   return (
     <div 
@@ -49,17 +43,15 @@ const Card: React.FC<CardProps> = ({ card, onFlip, isFlipped }) => {
           className="absolute inset-0 backface-hidden rounded-2xl shadow-lg border-4 border-white/80 overflow-hidden p-2 transition-all duration-300 group-hover:shadow-2xl group-hover:-translate-y-1"
           style={{ backgroundColor: baseColor }}
         >
-            <div className="w-full h-full rounded-xl bg-white/10 backdrop-blur-[1px] flex items-center justify-center p-1 relative overflow-hidden ring-1 ring-white/30">
+            <div className="w-full h-full rounded-xl bg-white/10 backdrop-blur-[1px] flex items-center justify-center p-0.5 relative overflow-hidden ring-1 ring-white/30">
                 {/* 裝飾性漸層 */}
                 <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent"></div>
                 
-                {/* Sprite 圖案展示 */}
+                {/* 單張圖片展示：使用 bg-cover 適配比例 */}
                 <div 
-                  className="w-full h-full bg-no-repeat relative z-10 drop-shadow-[0_6px_10px_rgba(0,0,0,0.25)] transform group-hover:scale-110 transition-transform duration-500 ease-out" 
+                  className="w-full h-full bg-no-repeat bg-cover bg-center relative z-10 drop-shadow-[0_4px_6px_rgba(0,0,0,0.2)] transform group-hover:scale-105 transition-transform duration-500 ease-out rounded-lg" 
                   style={{
-                    backgroundImage: `url(${SPRITE_URL})`,
-                    backgroundSize: '1000% 300%', // 10欄 * 100%, 3列 * 100%
-                    backgroundPosition: `${posX}% ${posY}%`,
+                    backgroundImage: `url(${imageUrl})`,
                   }}
                 />
             </div>
@@ -76,17 +68,17 @@ const Card: React.FC<CardProps> = ({ card, onFlip, isFlipped }) => {
                  <div className="w-24 h-24 rounded-full border-[12px] border-indigo-900"></div>
                </div>
                
-               <div className="text-center font-black text-xl sm:text-2xl text-indigo-950 leading-tight break-words drop-shadow-sm z-10">
+               <div className="text-center font-black text-lg sm:text-xl text-indigo-950 leading-tight break-words drop-shadow-sm z-10">
                  {card.prize.name}
                </div>
-               <div className="mt-3 w-12 h-1.5 bg-indigo-200 rounded-full"></div>
+               <div className="mt-3 w-10 h-1.5 bg-indigo-200 rounded-full"></div>
            </div>
            
            {/* 精緻裝飾點 */}
-           <div className="absolute top-4 left-4 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
-           <div className="absolute top-4 right-4 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
-           <div className="absolute bottom-4 left-4 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
-           <div className="absolute bottom-4 right-4 w-2 h-2 bg-indigo-400 rounded-full animate-pulse"></div>
+           <div className="absolute top-3 left-3 w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></div>
+           <div className="absolute top-3 right-3 w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></div>
+           <div className="absolute bottom-3 left-3 w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></div>
+           <div className="absolute bottom-3 right-3 w-1.5 h-1.5 bg-indigo-400 rounded-full animate-pulse"></div>
         </div>
       </div>
     </div>

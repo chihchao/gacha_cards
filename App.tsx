@@ -121,12 +121,14 @@ const App: React.FC = () => {
     const shuffledPool = shuffle(pool);
     const seriesList = [SeriesType.POKEMON, SeriesType.CHIIKAWA, SeriesType.SANRIO, SeriesType.CAPYBARA];
     
+    const imageIndices = shuffle(Array.from({ length: 30 }, (_, i) => i + 1));
+    
     const newCards: CardData[] = shuffledPool.map((prize, index) => ({
       id: index,
       prize,
       series: seriesList[index % seriesList.length],
       isFlipped: false,
-      spriteIndex: Math.floor(Math.random() * 30) 
+      spriteIndex: imageIndices[index % 30]
     }));
 
     setCards(newCards);
@@ -196,18 +198,14 @@ const App: React.FC = () => {
   };
 
   const totalPoolSize = useMemo(() => 
-    Object.values(rewardCounts).reduce((a, b) => a + b, 0), 
+    Object.values(rewardCounts).reduce((a: number, b: number) => a + b, 0), 
     [rewardCounts]
   );
 
-  // 根據卡片總數計算最佳的行列數
   const gridLayout = useMemo(() => {
     const n = cards.length;
     if (n === 0) return { cols: 6, rows: 5 };
-    
-    // 試圖讓行列比例接近螢幕比例（通常是寬螢幕）
-    // 我們讓列數多於行數，且兩者相乘大於等於 n
-    const cols = Math.ceil(Math.sqrt(n * 1.5)); // 稍微向寬度傾斜
+    const cols = Math.ceil(Math.sqrt(n * 2)); 
     const rows = Math.ceil(n / cols);
     return { cols, rows };
   }, [cards.length]);
@@ -252,7 +250,7 @@ const App: React.FC = () => {
             {view === 'dashboard' ? <><Ticket size={18} /> 抽卡樂園</> : <><LayoutDashboard size={18} /> 學生列表</>}
           </button>
           <div className="w-[1px] h-6 bg-gray-200 mx-1"></div>
-          <button onClick={() => setShowGachaSettings(true)} className="p-2.5 text-gray-400 hover:text-rose-500 hover:bg-rose-50 rounded-2xl transition-all" title="卡池設定">
+          <button onClick={() => setShowGachaSettings(true)} className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="卡池設定">
             <SlidersHorizontal size={20} />
           </button>
           <button onClick={() => setShowSyncSettings(true)} className="p-2.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl transition-all" title="同步設定">
@@ -289,7 +287,7 @@ const App: React.FC = () => {
             </div>
           </div>
         ) : view === 'dashboard' ? (
-          <div className="grid grid-cols-4 sm:grid-cols-7 lg:grid-cols-8 xl:grid-cols-10 gap-4 max-w-[1600px] mx-auto pb-8 overflow-y-auto custom-scrollbar flex-1 no-scrollbar">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(110px,1fr))] gap-4 w-full max-w-[1600px] mx-auto pb-8 overflow-y-auto custom-scrollbar flex-1 no-scrollbar">
             {students.map(student => (
               <StudentCard 
                 key={student.id} 
@@ -314,7 +312,7 @@ const App: React.FC = () => {
                     key={`${card.id}-${gachaId}`} 
                     className="w-full h-full flex items-center justify-center overflow-hidden"
                   >
-                    <div className="w-full h-full max-w-full max-h-full aspect-[4/3] flex items-center justify-center">
+                    <div className="w-full h-full max-w-full max-h-full aspect-[3/4] flex items-center justify-center">
                       <Card 
                         card={card} 
                         isFlipped={flippedIds.has(card.id)} 
@@ -337,7 +335,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* 雲端同步設定彈窗 */}
       {showSyncSettings && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-indigo-950/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
@@ -374,21 +371,21 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* 抽卡卡池設定彈窗 */}
+      {/* 抽卡卡池設定彈窗 - 已更新配色 */}
       {showGachaSettings && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-rose-950/40 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="bg-rose-500 p-6 text-white flex items-center justify-between">
+            <div className="bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white flex items-center justify-between">
               <h2 className="text-xl font-black flex items-center gap-2"><SlidersHorizontal size={20} /> 抽卡卡池設定</h2>
               <button onClick={() => setShowGachaSettings(false)} className="p-1 hover:bg-white/10 rounded-full transition-colors"><X size={20} /></button>
             </div>
             <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
-              <div className="bg-rose-50 p-4 rounded-2xl border-2 border-rose-100 text-xs font-bold text-rose-600 leading-relaxed">
+              <div className="bg-indigo-50 p-4 rounded-2xl border-2 border-indigo-100 text-xs font-bold text-indigo-600 leading-relaxed">
                 提示：請設定各獎勵卡在卡池中出現的數量。卡池總張數將自動調整。
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {rewardTypes.map(type => (
-                  <div key={type} className="flex items-center justify-between bg-white p-3 rounded-xl border border-rose-100 shadow-sm">
+                  <div key={type} className="flex items-center justify-between bg-white p-3 rounded-xl border border-indigo-100 shadow-sm hover:border-indigo-300 transition-colors">
                     <span className="text-sm font-bold text-gray-600 truncate mr-2">{type}</span>
                     <div className="flex items-center gap-2">
                        <input 
@@ -396,7 +393,7 @@ const App: React.FC = () => {
                         min="0"
                         value={rewardCounts[type] || 0}
                         onChange={(e) => updateRewardCountSetting(type, e.target.value)}
-                        className="w-16 bg-rose-50 border-none rounded-lg px-2 py-1 text-center font-bold text-rose-600 focus:ring-2 focus:ring-rose-400 outline-none"
+                        className="w-16 bg-slate-50 border-none rounded-lg px-2 py-1 text-center font-bold text-indigo-600 focus:ring-2 focus:ring-indigo-400 outline-none"
                        />
                        <span className="text-[10px] text-gray-400">張</span>
                     </div>
@@ -404,8 +401,8 @@ const App: React.FC = () => {
                 ))}
               </div>
               <div className="flex justify-between items-center px-2 py-4 border-t border-gray-100">
-                <span className="text-xs font-black text-gray-400 uppercase">當前卡池總計</span>
-                <span className="text-xl font-black text-rose-600">
+                <span className="text-xs font-black text-gray-400 uppercase tracking-widest">當前卡池總計</span>
+                <span className="text-xl font-black text-indigo-600">
                   {totalPoolSize} 張卡片
                 </span>
               </div>
@@ -415,7 +412,7 @@ const App: React.FC = () => {
                   setShowGachaSettings(false); 
                   initGacha(); 
                 }} 
-                className="w-full bg-rose-500 hover:bg-rose-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-rose-100 active:scale-95"
+                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 transition-all shadow-xl shadow-indigo-100 active:scale-95"
               >
                 <Save size={20} /> 儲存卡池配置
               </button>
